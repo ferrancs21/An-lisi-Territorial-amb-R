@@ -1,0 +1,99 @@
+---
+title: "Anàlisi Territorial amb R. Macrocefàlia de les capitals"
+author: "Ferran Casanova"
+date: "4/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Configuració
+## Carrega de paquets
+
+```{}
+library(tidyverse)
+library(readxl)
+library(sf)
+```
+
+## Dades padró
+Carreguem la totalitat de les dades. Es carreguen les següent columnes:
+*CPRO*: Província de residència
+*CMUN*: Municipi de residència
+*SEXO*: Sexe
+*CPRON*: Província de naixement
+*CMUNN*: Municipi/País de naixement
+*NACI*: Nacionalitat
+*EDAD*: Edat
+*TAMU*: Mida del municipi de residència
+*TAMUN*: Mida del municipi de naixement
+
+```{}
+data_padro <- "data/nacional_2019.txt"
+
+nom_var_padro <- c("CPRO",
+                "CMUN",
+                "SEXO",
+                "CPRON",
+                "CMUNN",
+                "NACI",
+                "EDAD",
+                "TAMU",
+                "TAMUN")
+
+mida_var_padro <- c(2, 3, 1, 2, 3, 3, 3, 2, 2)
+
+var_padro <- fwf_widths(mida_var_padro,
+                        col_names = nom_var_padro)
+
+padro <- read_fwf(data_padro,
+                   col_positions = var_padro,
+                   col_types = "ccicccicc")
+```
+
+### Metadades del padro
+Carreguem les metadades de les variables que més endavant utilitzarem.
+
+```{}
+arxiu_meta <- "data/Design_Microdatos_Padron_2019.xlsx"
+
+cpro <- read_xlsx(arxiu_meta,
+                  sheet = "CPRO",
+                  skip = 3,
+                  col_names = c("CPRO", "prov_residencia"))
+
+cpron <- read_xlsx(arxiu_meta,
+                   sheet = "CPRON",
+                   skip = 3,
+                   col_names = c("CPRON", "prov_naixement"))
+
+naci <- read_xlsx(arxiu_meta,
+                  sheet = "NACI",
+                  skip = 3,
+                  col_names = c("NACI", "nacionalitat")) 
+```
+
+## Cartografia
+
+Carreguem la cartografia
+
+```{}
+prov <- read_sf("Data/Provincia/Provincias_ETRS89_30N.shp")
+```
+
+# Exercici 01
+
+
+# Including Plots
+
+You can also embed plots, for example:
+
+
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
