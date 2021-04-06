@@ -9,10 +9,10 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Configuració
-## Carrega de paquets
+# 0.Configuració {0.}
+## 0.1 Carrega de paquets {0.1}
 
-```{}
+```{r}
 library(tidyverse)
 library(readxl)
 library(sf)
@@ -30,7 +30,7 @@ Carreguem la totalitat de les dades. Es carreguen les següent columnes:
 *TAMU*: Mida del municipi de residència
 *TAMUN*: Mida del municipi de naixement
 
-```{}
+```{r}
 data_padro <- "data/nacional_2019.txt"
 
 nom_var_padro <- c("CPRO",
@@ -53,10 +53,10 @@ padro <- read_fwf(data_padro,
                    col_types = "ccicccicc")
 ```
 
-### Metadades del padro
+### 0.1.1 Metadades del padro {0.1.1}
 Carreguem les metadades de les variables que més endavant utilitzarem.
 
-```{}
+```{r}
 arxiu_meta <- "data/Design_Microdatos_Padron_2019.xlsx"
 
 cpro <- read_xlsx(arxiu_meta,
@@ -72,20 +72,111 @@ cpron <- read_xlsx(arxiu_meta,
 naci <- read_xlsx(arxiu_meta,
                   sheet = "NACI",
                   skip = 3,
-                  col_names = c("NACI", "nacionalitat")) 
+                  col_names = c("NACI", "nacionalitat"))
+
+tamu <- read_xlsx(arxiu_meta,
+                  sheet = "TAMU",
+                  skip = 3,
+                  col_names = c("TAMU", "dim_municipi_residencia"))
 ```
 
-## Cartografia
+## 0.2 Cartografia {0.2}
 
 Carreguem la cartografia
 
-```{}
+```{r}
 prov <- read_sf("Data/Provincia/Provincias_ETRS89_30N.shp")
 ```
 
-# Exercici 01
+# 1. Macrocefàlia de les capitals {1.}
+## 1.1 Llista de municipis {1.1}
+Carreguem i llistem els municipis amb una població major a 10.000 habitants.
+
+La llista es troba a l'arxiu **arxiu_meta**, concretament a la pestanya *CMUN*
+
+```{r}
+cmun <- read_xlsx(arxiu_meta,
+                  sheet = "CMUN",
+                  skip = 5,
+                  col_names = c("CPRO", "CMUN", "mun_residencia"))
+list(cmun)
+```
+## 1.2 Camp CMUN {1.2}
+Comprovem si el camp *CMUN* és únic. Per a això agrupem el dataset en funció 
+de la variable *CMUN* i comptem les ocurrencies.
+```{r}
+cmun %>% 
+  group_by(CMUN) %>% 
+  count()
+```
+El resultat mostra que hi ha múltiples municipis amb el mateix codi.
+
+Comprovem si dins de cada província hi ha múltiples municipis amb
+el mateix codi, per veure si hi ha alguna combinació de municipi+província
+amb més d'una ocurrencia, ordenem el resultat en ordre descendent 
+```{r}
+cmun %>% 
+  group_by(CMUN, CPRO) %>% 
+  count %>% 
+  arrange(desc(n))
+```
+Es pot veure com cada combinació de CMUN+CPRO és única. Tot i això, 
+hi ha 3 files que no tenen valor.
+
+Esborrem els *NA* i tornem a comptar les ocurrencies.
+```{r}
+cmun <- filter(cmun, !is.na(CMUN))
+
+cmun %>% 
+  group_by(CMUN, CPRO) %>% 
+  count %>% 
+  arrange(desc(n))
+```
+Per a acabar de comprovar que les combinacions de *CMUN+CPRO* són úniques mirem
+si la taula resultant té el mateix número de files que el dataset **cmun**
+
+```{r}
+nrow(cmun)
+
+nrow(cmun) == cmun %>% 
+                group_by(CMUN, CPRO) %>% 
+                count %>% 
+                nrow()
+```
+## 1.3 Població per provincia {1.3}
+Generem una taula amb la població que resideix a cada província 
+anomenada **pob_provincia** 
+Fem un *left_join* amb el dataset *cpro* i afegim el nom de les províncies 
+```{r}
+pob_provincia <- padro %>% 
+  group_by(CPRO) %>% 
+  count(CPRO, name = "pob_total") %>% 
+  left_join(cpro, by = "CPRO") %>% 
+  select(CPRO, prov_residencia, pob_total)
+
+list(pob_provincia)
+```
+
+## 1.4 Residents a la capital de cada província {1.4}
+Generem una taula amb la població que resideix a la capital de cada província
+anomenada *pob_capital_provincia*
+
+Per a trobar la taula, primer agrupem el padro per *CPRO+CMUN*, comptem 
+les ocurrencies per trobar la població de cada municipi i després fem un left_join 
+amb la taula tamu creada al punt [0.1.1 Metadades del padro](#0.1.1)
 
 
+```{r}
+pob_capital_provincia <- padro %>% 
+  group_by(CPRO, CMUN) %>% 
+  count()
+```
+
+## 1.2 Camp CMUN
+
+```{r}
+
+```
 # Including Plots
 
 You can also embed plots, for example:
